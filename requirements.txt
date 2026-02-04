@@ -1,0 +1,16 @@
+# Backend
+fastapi==0.128.0
+uvicorn==0.40.0
+
+# Pydantic
+pydantic==2.12.5
+pydantic-settings==2.12.0
+
+# JWT tokens
+PyJWT==2.10.1
+python-jose==3.5.0
+
+# Database
+SQLAlchemy==2.0.45
+asyncpg==0.31.0
+bcrypt==4.1.2
