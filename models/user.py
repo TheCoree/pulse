@@ -15,5 +15,10 @@ class User(Base):
     )
     refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # ВОТ ЭТОГО НЕ ХВАТАЛО:
     calendar_links: Mapped[List["CalendarUser"]] = relationship(back_populates="user")
+
+    refresh_sessions = relationship(
+        "RefreshSession",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

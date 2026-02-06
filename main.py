@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from core.config import settings
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,7 +15,7 @@ from ui.start import print_start_message, print_end_message
 async def lifespan(app: FastAPI):
     print(set)
     from core.database import init_db
-    from models import calendar, calendar_user, user, event
+    from models import calendar, calendar_user, user, event, refresh_session
     await init_db()
     print_start_message()
     yield
@@ -34,11 +35,7 @@ app.include_router(event_router)
 # CORS middleware (for correct work with friontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost",
-        "http://localhost:3000",
-        "http://192.168.0.9:3000"
-    ],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
