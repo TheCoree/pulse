@@ -13,6 +13,7 @@ from datetime import timedelta, datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy import delete
 
 from core.deps import get_current_user
@@ -150,6 +151,7 @@ async def refresh_session(
 
     result = await db.execute(
         select(RefreshSession)
+        .options(selectinload(RefreshSession.user))  # 🔥 ВАЖНО
         .where(RefreshSession.refresh_token == refresh_token)
     )
     session = result.scalar_one_or_none()
@@ -170,13 +172,11 @@ async def refresh_session(
         data={'sub': user.username}
     )
 
-    # --- UPDATE SESSION ---
     session.refresh_token = new_refresh
     session.expires_at = datetime.now(timezone.utc) + timedelta(days=30)
 
     await db.commit()
 
-    # --- COOKIES ---
     response.set_cookie(
         key='access_token',
         value=new_access,
