@@ -213,8 +213,8 @@ async def logout(
         )
         await db.commit()
 
-    response.delete_cookie('access_token', path='/')
-    response.delete_cookie('refresh_token', path='/')
+    response.delete_cookie('access_token', httponly=True, samesite='lax')
+    response.delete_cookie('refresh_token', httponly=True, samesite='lax')
 
     return {'ok': True}
 
