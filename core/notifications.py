@@ -37,9 +37,9 @@ async def delete_telegram_message(chat_id: int, message_id: int):
 async def notify_order_confirmed(chat_id: int, order_id: int, photo_url: Optional[str] = None, description: Optional[str] = None, reply_to_message_id: Optional[int] = None) -> Optional[int]:
     """Уведомление о подтверждении админом."""
     text = (
-        f"<b>Заявка #{order_id} подтверждена админом!</b>\n"
+        f"<b>Заявка #{order_id} обработана!</b>\n"
         f"📋 Описание: {description or '<i>не указано</i>'}\n"
-        "Пожалуйста, подтвердите исправление."
+        "☑️ Пожалуйста, подтвердите исправление..."
     )
     reply_markup = {
         "inline_keyboard": [[
