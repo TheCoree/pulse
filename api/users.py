@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from schemas.user import UserPublic, ChangeUserRole, ChangePassword
+from schemas.user import UserPublic, ChangeUserRole, ChangePassword, ChangeUserPermissions
 
 from core.deps import get_current_user, allow_admin
 from core.security import verify_password, get_password_hash
@@ -102,3 +102,26 @@ async def change_user_role(
     await db.commit()
 
     return { 'detail': f'Роль {data.role} выбрана для {username}' }
+
+
+@router.patch('/{user_id}/permissions')
+async def change_user_permissions(
+    user_id: int,
+    data: ChangeUserPermissions,
+    admin: User = Depends(allow_admin),
+    db: AsyncSession = Depends(get_async_session),
+):
+    user_to_change = await db.scalar(
+        select(User).where(User.id == user_id)
+    )
+
+    if not user_to_change:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Пользователь не найден')
+    
+    username = user_to_change.username
+    user_to_change.is_items_corrector = data.is_items_corrector
+    await db.commit()
+
+    status_str = "назначен корректором" if data.is_items_corrector else "снят с должности корректора"
+    return { 'detail': f'Пользователь {username} {status_str}' }
+

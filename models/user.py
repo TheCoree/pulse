@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import Enum as SQLAlchemyEnum, Text # Добавь или исправь эту строку
+from sqlalchemy import Enum as SQLAlchemyEnum, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
 from schemas.auth import GlobalRole
@@ -14,6 +14,8 @@ class User(Base):
         SQLAlchemyEnum(GlobalRole), nullable=False, default=GlobalRole.USER
     )
     refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_items_corrector: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
 
     calendar_links: Mapped[List["CalendarUser"]] = relationship(back_populates="user")
 

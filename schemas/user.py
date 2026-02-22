@@ -5,12 +5,18 @@ class UserPublic(BaseModel):
     id: int
     username: str
     role: GlobalRole
+    is_items_corrector: bool
+
 
     class Config:
         orm_mode = True
 
 class ChangeUserRole(BaseModel):
     role: GlobalRole
+
+class ChangeUserPermissions(BaseModel):
+    is_items_corrector: bool
+
 
 class ChangePassword(BaseModel):
     old_password: str = Field(..., min_length=6, max_length=25)

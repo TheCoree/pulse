@@ -156,7 +156,12 @@ async def refresh_session(
     )
     session = result.scalar_one_or_none()
 
-    if not session or session.expires_at < datetime.now(timezone.utc):
+    # Обработка возможного отсутствия часового пояса уexpires_at из БД
+    expires_at = session.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if not session or expires_at < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Invalid refresh token',

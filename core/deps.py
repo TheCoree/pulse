@@ -67,6 +67,21 @@ class RoleChecker:
 allow_admin = RoleChecker([GlobalRole.ADMIN])
 # allow_any_auth = get_current_user # это у тебя уже есть
 
+async def require_items_corrector(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Проверяет, является ли пользователь корректором или админом.
+    """
+    if current_user.is_items_corrector or current_user.role == GlobalRole.ADMIN:
+        return current_user
+    
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="У вас нет прав для этого действия (нужна роль корректора)"
+    )
+
+
 async def require_editor(
     calendar_id: int = Path(...), 
     current_user: User = Depends(get_current_user),

@@ -22,9 +22,13 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost"
     CORS_ORIGINS: List[str] = Field(default_factory=list)
 
+    # --- Bot ---
+    BOT_SECRET_KEY: str = "change_me_in_env"
+    TELEGRAM_BOT_TOKEN: str = "change_me_in_env"
+
     model_config = {
         "env_file": ".env",
-        "extra": "forbid",  # 🔒 защита от опечаток
+        "extra": "ignore",
     }
 
 
