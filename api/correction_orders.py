@@ -174,7 +174,7 @@ async def update_correction_order(
     is_rejected: bool | None = Form(None),
     is_user_confirmed: bool | None = Form(None),
     is_updated: bool | None = Form(None),
-    bot_message_id: int | None = Form(None),
+    bot_message_ids: list[int] | None = Form(None),
     reply_text: str | None = Form(None),
     reply_photos: List[UploadFile] = File(default=[]),
     db: AsyncSession = Depends(get_async_session),
@@ -203,7 +203,7 @@ async def update_correction_order(
     if is_rejected is not None: order.is_rejected = is_rejected
     if is_user_confirmed is not None: order.is_user_confirmed = is_user_confirmed
     if is_updated is not None: order.is_updated = is_updated
-    if bot_message_id is not None: order.bot_message_id = bot_message_id
+    if bot_message_ids is not None: order.bot_message_ids = bot_message_ids
     if reply_text is not None: order.reply_text = reply_text
 
     # Обработка новых фото для ответа
@@ -223,10 +223,9 @@ async def update_correction_order(
     await db.commit()
     await db.refresh(order)
 
-    # Уведомления при смене статуса
     if not prev_corrected and order.is_corrected:
         # Уведомление о подтверждении (с возможным текстом и фото ответа)
-        msg_id = await notify_order_confirmed(
+        msg_ids = await notify_order_confirmed(
             order.telegram_chat_id, 
             order.id, 
             photo_url=order.photo_urls[0] if order.photo_urls else None, 
@@ -235,17 +234,18 @@ async def update_correction_order(
             reply_text=order.reply_text,
             reply_photo_urls=order.reply_photo_urls
         )
-        if msg_id:
-            order.bot_message_id = msg_id
+        if msg_ids:
+            order.bot_message_ids = msg_ids
             await db.commit()
             await db.refresh(order)
             
     elif prev_corrected and not order.is_corrected:
-        # Если админ отменил "Готово", удаляем старое сообщение с кнопкой у пользователя
-        if order.bot_message_id:
+        # Если админ отменил "Готово", удаляем ВСЕ старые сообщения с кнопкой и фото у пользователя
+        if order.bot_message_ids:
             from core.notifications import delete_telegram_message
-            await delete_telegram_message(order.telegram_chat_id, order.bot_message_id)
-            order.bot_message_id = None
+            for mid in order.bot_message_ids:
+                await delete_telegram_message(order.telegram_chat_id, mid)
+            order.bot_message_ids = []
         
         # Очищаем данные ответа
         order.reply_text = None

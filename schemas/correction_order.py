@@ -19,7 +19,7 @@ class CorrectionOrderStatusUpdate(BaseModel):
     is_rejected: Optional[bool] = None
     is_user_confirmed: Optional[bool] = None
     is_updated: Optional[bool] = None
-    bot_message_id: Optional[int] = None
+    bot_message_ids: Optional[list[int]] = None
 
 
 class CorrectionOrderOut(BaseModel):
@@ -37,7 +37,7 @@ class CorrectionOrderOut(BaseModel):
     is_rejected: bool
     is_user_confirmed: bool
     is_updated: bool
-    bot_message_id: Optional[int]
+    bot_message_ids: list[int] = []
     user_message_id: Optional[int]
     reply_text: Optional[str] = None
     reply_photo_urls: list[str] = []

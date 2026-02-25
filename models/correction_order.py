@@ -35,8 +35,8 @@ class CorrectionOrder(Base):
 
     is_user_confirmed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # Для управления сообщениями в боте
-    bot_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    # Список ID сообщений в боте (например, MediaGroup + основное сообщение с кнопками)
+    bot_message_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     
     # Флаг, что заявка была обновлена пользователем
     is_updated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

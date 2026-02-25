@@ -42,8 +42,9 @@ async def notify_order_confirmed(
     reply_to_message_id: Optional[int] = None,
     reply_text: Optional[str] = None,
     reply_photo_urls: Optional[list[str]] = None
-) -> Optional[int]:
-    """Уведомление о подтверждении админом."""
+) -> list[int]:
+    """Уведомление о подтверждении админом. Возвращает список ID всех отправленных сообщений."""
+    sent_ids = []
     base_text = (
         f"<b>Заявка #{order_id} обработана!</b>\n"
         f"📋 Описание: {description or '<i>не указано</i>'}\n"
@@ -102,11 +103,19 @@ async def notify_order_confirmed(
                             data["reply_parameters"] = json.dumps({"message_id": reply_to_message_id})
                         
                         response = await client.post(group_url, data=data, files=files)
-                        if response.status_code != 200:
+                        if response.status_code == 200:
+                            # sendMediaGroup возвращает массив сообщений
+                            res_data = response.json()
+                            for msg in res_data.get("result", []):
+                                sent_ids.append(msg.get("message_id"))
+                        else:
                             print(f"Error sending MediaGroup: {response.status_code} - {response.text}")
                         
                         # Основной текст и кнопки отправляем ОТДЕЛЬНЫМ сообщением, которое тоже реплаит на оригинал
-                        return await send_telegram_notification(chat_id, base_text, reply_markup, reply_to_message_id)
+                        text_msg_id = await send_telegram_notification(chat_id, base_text, reply_markup, reply_to_message_id)
+                        if text_msg_id:
+                            sent_ids.append(text_msg_id)
+                        return sent_ids
                 
                 else:
                     # Один файл - sendPhoto с загрузкой файла
@@ -130,7 +139,8 @@ async def notify_order_confirmed(
                             response = await client.post(url, data=data, files=files)
                             
                         if response.status_code == 200:
-                            return response.json().get("result", {}).get("message_id")
+                            sent_ids.append(response.json().get("result", {}).get("message_id"))
+                            return sent_ids
                         else:
                             print(f"Error sending Photo: {response.status_code} - {response.text}")
                     else:
@@ -140,7 +150,10 @@ async def notify_order_confirmed(
                 print(f"Exception during direct file upload to Telegram: {e}")
 
     # Fallback to pure text message with reply
-    return await send_telegram_notification(chat_id, base_text, reply_markup, reply_to_message_id)
+    text_msg_id = await send_telegram_notification(chat_id, base_text, reply_markup, reply_to_message_id)
+    if text_msg_id:
+        sent_ids.append(text_msg_id)
+    return sent_ids
 
 async def notify_order_rejected(chat_id: int, order_id: int, reply_to_message_id: Optional[int] = None):
     """Уведомление об отклонении."""
