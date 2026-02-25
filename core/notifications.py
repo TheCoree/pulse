@@ -50,13 +50,13 @@ async def notify_order_confirmed(
     )
     
     if reply_text:
-        base_text += f"\n💬 <b>Комментарий корректора:</b>\n{reply_text}\n"
+        base_text += f"💬 <b>Ответ:</b>\n{reply_text}"
     
-    base_text += "\n☑️ Пожалуйста, подтвердите исправление..."
+    base_text += "\n👍 Пожалуйста, подтвердите исправление..."
     
     reply_markup = {
         "inline_keyboard": [[
-            {"text": "✅ Подтверждаю", "callback_data": f"user_confirm_{order_id}"}
+            {"text": " Подтверждаю", "callback_data": f"user_confirm_{order_id}"}
         ]]
     }
     
@@ -150,9 +150,9 @@ async def notify_order_rejected(chat_id: int, order_id: int, reply_to_message_id
 async def notify_info_requested(chat_id: int, order_id: int, reason: str, reply_to_message_id: Optional[int] = None):
     """Запрос дополнительной информации."""
     text = (
-        f"<b>Заявка #{order_id} требует уточнения!</b>\n\n"
-        f"<i>Причина:</i> {reason}\n\n"
-        "Вы можете нажать кнопку ниже, чтобы прислать исправленные данные."
+        f"<b>Заявка #{order_id} требует уточнения!</b>\n"
+        f"<i>Причина:</i> {reason}\n"
+        "⚠️ Вы можете нажать кнопку ниже, чтобы прислать исправленные данные."
     )
     reply_markup = {
         "inline_keyboard": [[
