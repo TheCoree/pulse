@@ -39,5 +39,7 @@ class CorrectionOrderOut(BaseModel):
     is_updated: bool
     bot_message_id: Optional[int]
     user_message_id: Optional[int]
+    reply_text: Optional[str] = None
+    reply_photo_urls: list[str] = []
 
     model_config = {"from_attributes": True}

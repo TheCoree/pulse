@@ -168,7 +168,15 @@ async def list_correction_orders(
 @router.patch("/{order_id}", response_model=CorrectionOrderOut)
 async def update_correction_order(
     order_id: int,
-    data: CorrectionOrderStatusUpdate,
+    is_corrected: bool | None = Form(None),
+    is_reported: bool | None = Form(None),
+    report_text: str | None = Form(None),
+    is_rejected: bool | None = Form(None),
+    is_user_confirmed: bool | None = Form(None),
+    is_updated: bool | None = Form(None),
+    bot_message_id: int | None = Form(None),
+    reply_text: str | None = Form(None),
+    reply_photos: List[UploadFile] = File(default=[]),
     db: AsyncSession = Depends(get_async_session),
     corrector: User = Depends(require_items_corrector),
 ):
@@ -182,32 +190,55 @@ async def update_correction_order(
     prev_reported = order.is_reported
 
     # Запрет отмены статуса "Готово", если пользователь уже подтвердил
-    if prev_corrected and not data.is_corrected and order.is_user_confirmed:
+    if prev_corrected and is_corrected is False and order.is_user_confirmed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя отменить готовность, так как пользователь уже подтвердил наличие"
         )
 
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(order, field, value)
+    # Применяем изменения
+    if is_corrected is not None: order.is_corrected = is_corrected
+    if is_reported is not None: order.is_reported = is_reported
+    if report_text is not None: order.report_text = report_text
+    if is_rejected is not None: order.is_rejected = is_rejected
+    if is_user_confirmed is not None: order.is_user_confirmed = is_user_confirmed
+    if is_updated is not None: order.is_updated = is_updated
+    if bot_message_id is not None: order.bot_message_id = bot_message_id
+    if reply_text is not None: order.reply_text = reply_text
+
+    # Обработка новых фото для ответа
+    if reply_photos:
+        # Если присланы новые фото, заменяем старые (опционально, но по логике заявки так)
+        # В данном случае просто добавляем или заменяем
+        new_reply_urls: list[str] = []
+        for photo in reply_photos:
+            ext = os.path.splitext(photo.filename or "photo.jpg")[1] or ".jpg"
+            filename = f"reply_{uuid.uuid4()}{ext}"
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            with open(filepath, "wb") as f:
+                shutil.copyfileobj(photo.file, f)
+            new_reply_urls.append(f"/uploads/{filename}")
+        order.reply_photo_urls = new_reply_urls
 
     await db.commit()
     await db.refresh(order)
 
     # Уведомления при смене статуса
     if not prev_corrected and order.is_corrected:
-        # Пытаемся взять первое фото для уведомления
-        first_photo = order.photo_urls[0] if order.photo_urls else None
+        # Уведомление о подтверждении (с возможным текстом и фото ответа)
         msg_id = await notify_order_confirmed(
             order.telegram_chat_id, 
             order.id, 
-            photo_url=first_photo, 
+            photo_url=order.photo_urls[0] if order.photo_urls else None, 
             description=order.description,
-            reply_to_message_id=order.user_message_id
+            reply_to_message_id=order.user_message_id,
+            reply_text=order.reply_text,
+            reply_photo_urls=order.reply_photo_urls
         )
         if msg_id:
             order.bot_message_id = msg_id
             await db.commit()
+            await db.refresh(order)
             
     elif prev_corrected and not order.is_corrected:
         # Если админ отменил "Готово", удаляем старое сообщение с кнопкой у пользователя
@@ -215,7 +246,19 @@ async def update_correction_order(
             from core.notifications import delete_telegram_message
             await delete_telegram_message(order.telegram_chat_id, order.bot_message_id)
             order.bot_message_id = None
-            await db.commit()
+        
+        # Очищаем данные ответа
+        order.reply_text = None
+        # Удаляем файлы фото ответа
+        for url in (order.reply_photo_urls or []):
+            filename = url.split("/")[-1]
+            filepath = os.path.join(UPLOAD_DIR, filename)
+            if os.path.exists(filepath):
+                try: os.remove(filepath)
+                except: pass
+        order.reply_photo_urls = []
+        await db.commit()
+        await db.refresh(order)
 
     elif not prev_rejected and order.is_rejected:
         await notify_order_rejected(order.telegram_chat_id, order.id, reply_to_message_id=order.user_message_id)

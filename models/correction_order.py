@@ -43,3 +43,7 @@ class CorrectionOrder(Base):
 
     # ID сообщения пользователя, на которое нужно будет отвечать (Reply)
     user_message_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+
+    # Ответ администратора (корректора) при подтверждении
+    reply_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reply_photo_urls: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
