@@ -50,13 +50,13 @@ async def notify_order_confirmed(
     )
     
     if reply_text:
-        base_text += f"💬 <b>Ответ:</b>\n{reply_text}"
+        base_text += f"💬 <b>Ответ:</b> {reply_text}\n"
     
-    base_text += "\n👍 Пожалуйста, подтвердите исправление..."
+    base_text += "☑️ Пожалуйста, подтвердите исправление..."
     
     reply_markup = {
         "inline_keyboard": [[
-            {"text": " Подтверждаю", "callback_data": f"user_confirm_{order_id}"}
+            {"text": "👍 Подтверждаю", "callback_data": f"user_confirm_{order_id}"}
         ]]
     }
     
