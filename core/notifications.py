@@ -61,12 +61,9 @@ async def notify_order_confirmed(
     }
     
     # Режим отправки фото
-    # Если есть фото ответа - приоритет им
-    photos_to_send = []
-    if reply_photo_urls:
-        photos_to_send = reply_photo_urls
-    elif photo_url:
-        photos_to_send = [photo_url]
+    # Отправляем только те фото, которые прикрепил корректор. 
+    # Старое фото клиента повторно не шлем (по просьбе пользователя).
+    photos_to_send = reply_photo_urls if reply_photo_urls else []
 
     if photos_to_send:
         # Пытаемся отправить файлы напрямую из файловой системы
