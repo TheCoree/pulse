@@ -3,7 +3,6 @@ from fastapi.staticfiles import StaticFiles
 from core.config import settings
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 import os
 
 from api.users import router as user_router
@@ -52,8 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(ProxyHeadersMiddleware, trusted_proxies="*")
 
 
 @app.get('/ping')
