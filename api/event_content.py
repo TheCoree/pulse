@@ -39,7 +39,7 @@ async def _get_event_or_404(
 
 
 # ── GET /content ──────────────────────────────────────────────────────────────
-@router.get("/", response_model=List[EventContentOut])
+@router.get("", response_model=List[EventContentOut])
 async def get_event_content(
     calendar_id: int,
     event_id: int,
