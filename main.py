@@ -9,6 +9,7 @@ from api.users import router as user_router
 from api.calendars import router as calendar_router
 from api.auth import router as auth_router
 from api.events import router as event_router
+from api.event_content import router as event_content_router
 from api.correction_orders import router as correction_orders_router
 
 from ui.start import print_start_message, print_end_message
@@ -18,7 +19,7 @@ from ui.start import print_start_message, print_end_message
 async def lifespan(app: FastAPI):
     print(set)
     from core.database import init_db
-    from models import calendar, calendar_user, user, event, refresh_session, correction_order
+    from models import calendar, calendar_user, user, event, event_content, refresh_session, correction_order
     await init_db()
     # Создаём папку uploads если не существует
     os.makedirs("uploads", exist_ok=True)
@@ -35,6 +36,7 @@ app.include_router(user_router)
 app.include_router(auth_router)
 app.include_router(calendar_router)
 app.include_router(event_router)
+app.include_router(event_content_router)
 app.include_router(correction_orders_router)
 
 # Раздача загруженных фото

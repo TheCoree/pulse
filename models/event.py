@@ -23,3 +23,9 @@ class Event(Base):
     )
 
     calendar = relationship("Calendar", back_populates="events")
+    contents = relationship(
+        "EventContent",
+        back_populates="event",
+        order_by="EventContent.order",
+        cascade="all, delete-orphan",
+    )
