@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-
-from schemas.user import UserPublic, ChangeUserRole, ChangePassword, ChangeUserPermissions
+import secrets
+from datetime import datetime, timedelta, timezone
+from schemas.user import UserPublic, ChangeUserRole, ChangePassword, ChangeUserPermissions, ProfileUpdate
 
 from core.deps import get_current_user, allow_admin
 from core.security import verify_password, get_password_hash
@@ -19,6 +20,69 @@ router = APIRouter(prefix='/user', tags=['Users'])
 @router.get('/me', response_model=UserPublic)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.patch('/me', response_model=UserPublic)
+async def update_profile(
+    data: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    if data.username:
+        # Check if username is already taken
+        existing_user = await db.scalar(
+            select(User).where(User.username == data.username, User.id != current_user.id)
+        )
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Пользователь с таким логином уже существует'
+            )
+        current_user.username = data.username
+    
+    if data.display_name is not None:
+        current_user.display_name = data.display_name
+        
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post('/telegram/generate-token')
+async def generate_telegram_token(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    if current_user.telegram_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Telegram уже привязан к этому аккаунту'
+        )
+
+    token = secrets.token_urlsafe(16)
+    current_user.telegram_connect_token = token
+    current_user.telegram_connect_token_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    
+    await db.commit()
+    
+    return {'token': token}
+
+
+@router.delete('/telegram')
+async def unlink_telegram(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    if not current_user.telegram_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Telegram не привязан'
+        )
+    
+    current_user.telegram_id = None
+    await db.commit()
+    
+    return {'detail': 'Telegram успешно отвязан'}
 
 
 @router.get('/all-list')

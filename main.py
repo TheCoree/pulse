@@ -11,13 +11,13 @@ from api.auth import router as auth_router
 from api.events import router as event_router
 from api.event_content import router as event_content_router
 from api.correction_orders import router as correction_orders_router
+from api.bot_api import router as bot_router
 
 from ui.start import print_start_message, print_end_message
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(set)
     from core.database import init_db
     from models import calendar, calendar_user, user, event, event_content, refresh_session, correction_order
     await init_db()
@@ -38,6 +38,7 @@ app.include_router(calendar_router)
 app.include_router(event_router)
 app.include_router(event_content_router)
 app.include_router(correction_orders_router)
+app.include_router(bot_router)
 
 # Раздача загруженных фото
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

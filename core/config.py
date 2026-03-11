@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # --- Bot ---
     BOT_SECRET_KEY: str = "change_me_in_env"
     TELEGRAM_BOT_TOKEN: str = "change_me_in_env"
+    NOTIFY_BOT_TOKEN: str = "change_me_in_env"
 
     model_config = {
         "env_file": ".env",
