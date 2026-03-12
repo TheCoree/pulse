@@ -8,7 +8,7 @@ import os
 from api.users import router as user_router
 from api.calendars import router as calendar_router
 from api.auth import router as auth_router
-from api.events import router as event_router
+from api.events import router as event_router, standalone_router as standalone_event_router
 from api.event_content import router as event_content_router
 from api.correction_orders import router as correction_orders_router
 from api.bot_api import router as bot_router
@@ -36,6 +36,7 @@ app.include_router(user_router)
 app.include_router(auth_router)
 app.include_router(calendar_router)
 app.include_router(event_router)
+app.include_router(standalone_event_router)
 app.include_router(event_content_router)
 app.include_router(correction_orders_router)
 app.include_router(bot_router)

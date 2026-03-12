@@ -105,3 +105,28 @@ async def require_editor(
         )
     
     return link
+
+
+async def require_viewer(
+    calendar_id: int = Path(...), 
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_session)
+) -> CalendarUser:
+    """
+    Проверяет, есть ли у пользователя права на просмотр календаря.
+    Нужен хотя бы 'viewer'.
+    """
+    query = select(CalendarUser).where(
+        CalendarUser.calendar_id == calendar_id,
+        CalendarUser.user_id == current_user.id
+    )
+    result = await db.execute(query)
+    link = result.scalar_one_or_none()
+
+    if not link:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="У вас нет прав на доступ к этому календарю"
+        )
+    
+    return link

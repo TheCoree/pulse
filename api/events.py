@@ -8,6 +8,8 @@ from sqlalchemy.orm import joinedload
 
 from models.event import Event
 from models.user import User
+from models.calendar_user import CalendarUser
+
 
 from core.deps import require_editor, get_current_user
 from core.database import get_async_session
@@ -141,4 +143,62 @@ async def delete_event(
     await db.delete(event_to_delete)
     await db.commit()
 
+
     return { 'detail': 'Событие успешно удалено' }
+
+
+# --- STANDALONE EVENTS ---
+
+standalone_router = APIRouter(prefix='/events', tags=['Standalone Events'])
+
+
+@standalone_router.get('/{event_id}')
+async def get_standalone_event(
+    event_id: int,
+    db: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Event).options(joinedload(Event.calendar)).where(Event.id == event_id)
+    event = await db.scalar(stmt)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Событие не найдено')
+
+    # Проверка прав (viewer или выше)
+    perm_stmt = select(CalendarUser).where(
+        CalendarUser.calendar_id == event.calendar_id,
+        CalendarUser.user_id == current_user.id
+    )
+    perm = await db.scalar(perm_stmt)
+    if not perm:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='У вас нет прав на просмотр этого события')
+
+    return event
+
+
+@standalone_router.get('/{event_id}/content')
+async def get_standalone_event_content(
+    event_id: int,
+    db: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Получаем событие, чтобы узнать calendar_id
+    stmt = select(Event).where(Event.id == event_id)
+    event = await db.scalar(stmt)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Событие не найдено')
+
+    # 2. Проверка прав
+    perm_stmt = select(CalendarUser).where(
+        CalendarUser.calendar_id == event.calendar_id,
+        CalendarUser.user_id == current_user.id
+    )
+    perm = await db.scalar(perm_stmt)
+    if not perm:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='У вас нет прав на просмотр этого события')
+
+    # 3. Получаем контент
+    from models.event_content import EventContent
+    content_stmt = select(EventContent).where(EventContent.event_id == event_id).order_by(EventContent.order)
+    result = await db.execute(content_stmt)
+    return result.scalars().all()
+
