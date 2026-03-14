@@ -9,6 +9,7 @@ class Calendar(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(255), unique=True)
     description: Mapped[str | None] = mapped_column(Text)
+    type: Mapped[str | None] = mapped_column(String(50))
 
     events = relationship("Event", back_populates="calendar")
     

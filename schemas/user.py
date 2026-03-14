@@ -10,8 +10,7 @@ class UserPublic(BaseModel):
     telegram_id: int | None = None
 
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 class ProfileUpdate(BaseModel):
     display_name: str | None = Field(None, max_length=50)

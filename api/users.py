@@ -188,4 +188,35 @@ async def change_user_permissions(
 
     status_str = "назначен корректором" if data.is_items_corrector else "снят с должности корректора"
     return { 'detail': f'Пользователь {username} {status_str}' }
+    
+
+@router.get('/search', response_model=list[UserPublic])
+async def search_users(
+    q: str = "",
+    db: AsyncSession = Depends(get_async_session),
+    current_user: User = Depends(get_current_user),
+):
+    if not q:
+        # Return some initial candidates (excluding current user)
+        result = await db.execute(
+            select(User)
+            .where(User.id != current_user.id)
+            .limit(5)
+        )
+        return result.scalars().all()
+        
+    if len(q) < 1:
+        return []
+        
+    result = await db.execute(
+        select(User)
+        .where(
+            (User.username.ilike(f"%{q}%")) | 
+            (User.display_name.ilike(f"%{q}%"))
+        )
+        .where(User.id != current_user.id)
+        .limit(10)
+    )
+    users = result.scalars().all()
+    return users
 

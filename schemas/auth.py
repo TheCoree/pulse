@@ -10,8 +10,9 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=6, max_length=32)
 
 class LocalRole(str, Enum):
-    EDITOR = "Editor"
-    VIEWER = "Viewer"
+    OWNER = "owner"
+    EDITOR = "editor"
+    VIEWER = "viewer"
 
 class Token(BaseModel):
     access_token: str

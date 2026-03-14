@@ -8,7 +8,7 @@ class Event(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
-    calendar_id: Mapped[int] = mapped_column(ForeignKey("calendars.id"), nullable=False)
+    calendar_id: Mapped[int] = mapped_column(ForeignKey("calendars.id", ondelete="CASCADE"), nullable=False)
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)

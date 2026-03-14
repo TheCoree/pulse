@@ -7,7 +7,7 @@ from core.database import get_async_session
 from core.config import settings
 from models.user import User
 from models.calendar_user import CalendarUser
-from schemas.auth import GlobalRole
+from schemas.auth import GlobalRole, LocalRole
 
 
 async def get_current_user(
@@ -98,10 +98,10 @@ async def require_editor(
     result = await db.execute(query)
     link = result.scalar_one_or_none()
 
-    if not link:
+    if not link or link.role not in [LocalRole.OWNER, LocalRole.EDITOR]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, 
-            detail="У вас нет прав на редактирование этого календаря"
+            detail="У вас недостаточно прав для редактирования (нужна роль: Редактор или Владелец)"
         )
     
     return link

@@ -11,7 +11,7 @@ from models.user import User
 from models.calendar_user import CalendarUser
 
 
-from core.deps import require_editor, get_current_user
+from core.deps import require_editor, require_viewer, get_current_user
 from core.database import get_async_session
 
 import datetime
@@ -26,7 +26,8 @@ async def get_events_range(
     calendar_id: int,
     query: EventsRangeQuery = Depends(),
     db: AsyncSession = Depends(get_async_session),
-    current_user: User = Depends(get_current_user) 
+    current_user: User = Depends(get_current_user),
+    _ = Depends(require_viewer)
 ):
     # Логика пересечения:
     # 1. Событие началось ДО того, как закончился наш range (Event.start < query.to_date)
@@ -51,9 +52,11 @@ async def get_events_range(
 
 @router.get('/{event_id}')
 async def get_event(
+    calendar_id: int,
     event_id: int,
     db: AsyncSession = Depends(get_async_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    _ = Depends(require_viewer)
 ):
     query = (
         select(Event)
